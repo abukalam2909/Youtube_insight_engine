@@ -1,0 +1,13 @@
+# Ignore secret or sensitive files
+Key.txt
+
+# Ignore Terraform state files and lock
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+
+# Bytecode, logs, and OS-generated files (general good practice)
+*.pyc
+__pycache__/
+.DS_Store
