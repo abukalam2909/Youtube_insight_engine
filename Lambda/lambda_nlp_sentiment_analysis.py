@@ -3,7 +3,7 @@ import os
 import boto3
 import urllib.parse
 import urllib.request
-from collections import Counter
+from collections import Counter, defaultdict
 
 # Environment variables
 DYNAMODB_TABLE = os.environ['DYNAMODB_TABLE']
@@ -13,6 +13,7 @@ REGION = os.environ.get('AWS_REGION', 'us-east-1')
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(DYNAMODB_TABLE)
 comprehend = boto3.client('comprehend', region_name=REGION)
+lambda_client = boto3.client('lambda')
 
 def get_video_metadata(channel_id):
     response = table.scan(
@@ -35,24 +36,51 @@ def fetch_comments(video_id):
             reason = error_body.get("error", {}).get("errors", [{}])[0].get("reason", "")
             if reason == "commentsDisabled":
                 print(f"Comments disabled for video: {video_id}")
-                return []  # No comments to analyze
+                return []
         print(f"HTTPError for video {video_id}: {e}")
         return []
     except Exception as e:
         print(f"Failed to fetch comments for video {video_id}: {e}")
         return []
 
-def summarize_comment_sentiment(comments):
-    summary = Counter({'POSITIVE': 0, 'NEGATIVE': 0, 'NEUTRAL': 0, 'MIXED': 0})
+def analyze_sentiment_and_sample(comments):
+    sentiment_summary = Counter({'POSITIVE': 0, 'NEGATIVE': 0, 'NEUTRAL': 0, 'MIXED': 0})
+    sentiment_samples = defaultdict(list)
+
     for comment in comments:
-        text = comment['snippet']['topLevelComment']['snippet']['textDisplay']
         try:
-            sentiment = comprehend.detect_sentiment(Text=text, LanguageCode='en')
-            summary[sentiment['Sentiment'].upper()] += 1
+            snippet = comment['snippet']['topLevelComment']['snippet']
+            text = snippet.get('textDisplay', '')
+            likes = snippet.get('likeCount', 0)
+
+            #sentiment = comprehend.detect_sentiment(Text=text, LanguageCode='en')
+            # Truncate to 5000 bytes (not characters)
+            encoded_text = text.encode('utf-8')
+            if len(encoded_text) > 5000:
+                encoded_text = encoded_text[:5000]
+                text = encoded_text.decode('utf-8', errors='ignore')  # safely decode
+
+            sentiment = comprehend.detect_sentiment(Text=text, LanguageCode='en') 
+            sentiment_type = sentiment['Sentiment'].upper()
+            sentiment_summary[sentiment_type] += 1
+
+            # Add to samples with likes count
+            sentiment_samples[sentiment_type].append({
+                "text": text,
+                "likes": likes
+            })
+
         except Exception as e:
-            print(f"Error analyzing sentiment: {e}")
+            print(f"Error processing comment: {e}")
             continue
-    return dict(summary)
+
+    # Keep top 3 samples per sentiment type, sorted by likes
+    sample_comments = {}
+    for sentiment_type, comment_list in sentiment_samples.items():
+        sorted_comments = sorted(comment_list, key=lambda x: x['likes'], reverse=True)
+        sample_comments[sentiment_type] = sorted_comments[:3]
+
+    return dict(sentiment_summary), sample_comments
 
 def lambda_handler(event, context):
     channel_id = event.get('channel_id')
@@ -65,25 +93,42 @@ def lambda_handler(event, context):
 
     results = []
     videos = get_video_metadata(channel_id)
+
     for video in videos:
         video_id = video.get('VideoId')
         title = video.get('Title', '')
 
         comments = fetch_comments(video_id)
-        sentiment_counts = summarize_comment_sentiment(comments)
+        sentiment_counts, sample_comments = analyze_sentiment_and_sample(comments)
 
-        results.append({
-            'VideoId': video_id,
-            'Title': title,
-            'CommentSentimentSummary': sentiment_counts
-        })
-        # Store sentiment summary in DynamoDB
+        # Store sentiment summary and sample comments in DynamoDB
         table.update_item(
             Key={"VideoId": video_id},
-            UpdateExpression="SET CommentSentimentSummary = :val",
-            ExpressionAttributeValues={":val": sentiment_counts}
+            UpdateExpression="""
+                SET CommentSentimentSummary = :summary,
+                    SampleComments = :samples
+            """,
+            ExpressionAttributeValues={
+                ":summary": sentiment_counts,
+                ":samples": sample_comments
+            }
         )
 
+        results.append({
+            "VideoId": video_id,
+            "Title": title,
+            "CommentSentimentSummary": sentiment_counts,
+            "SampleComments": sample_comments
+        })
+
+    try:
+        lambda_client.invoke(
+            FunctionName='YouTubeVectorizeAndStoreFunction',
+            InvocationType='Event',
+            Payload=json.dumps({'channel_id': channel_id})
+        )
+    except Exception as e:
+        print(f"Error invoking vectorize Lambda: {e}")
 
     return {
         'statusCode': 200,
