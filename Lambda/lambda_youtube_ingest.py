@@ -49,9 +49,14 @@ def fetch_youtube_data(channel_id):
         return json.loads(response.read())
 
 def lambda_handler(event, context):
-    channel_id = event.get("channel_id")
-    channel_name = event.get("channel_name")
-    analyse_comments = event.get("analyse_comments")
+    if "body" in event and isinstance(event["body"], str):
+        body = json.loads(event["body"])
+    else:
+        body = event
+
+    channel_id = body.get("channel_id")
+    channel_name = body.get("channel_name")
+    analyse_comments = body.get("analyse_comments")
 
     # Resolve channelId from name if needed
     if not channel_id and channel_name:
@@ -106,5 +111,3 @@ def lambda_handler(event, context):
         "statusCode": 200,
         "body": f"Fetched and stored metadata for channel {channel_id}"
     }
-
-

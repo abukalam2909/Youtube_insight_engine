@@ -97,9 +97,13 @@ def call_bedrock(prompt_dict):
 
 def lambda_handler(event, context):
     print(f"Received event: {json.dumps(event)}")
+    if "body" in event and isinstance(event["body"], str):
+        body = json.loads(event["body"])
+    else:
+        body = event
 
-    query = event.get('query')
-    video_id = event.get('video_id')
+    query = body.get('query')
+    video_id = body.get('video_id')
 
     if not query or not video_id:
         return {
