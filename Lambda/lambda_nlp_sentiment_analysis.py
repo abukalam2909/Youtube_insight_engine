@@ -25,7 +25,7 @@ def get_video_metadata(channel_id):
 def fetch_comments(video_id):
     url = (
         f"https://www.googleapis.com/youtube/v3/commentThreads"
-        f"?key={YOUTUBE_API_KEY}&videoId={video_id}&part=snippet&maxResults=100"
+        f"?key={YOUTUBE_API_KEY}&videoId={video_id}&part=snippet&maxResults=25"
     )
     try:
         with urllib.request.urlopen(url) as response:
@@ -106,29 +106,30 @@ def lambda_handler(event, context):
             Key={"VideoId": video_id},
             UpdateExpression="""
                 SET CommentSentimentSummary = :summary,
-                    SampleComments = :samples
+                    SampleComments = :samples,
+                    ProcessingStatus = :status
             """,
             ExpressionAttributeValues={
                 ":summary": sentiment_counts,
-                ":samples": sample_comments
+                ":samples": sample_comments,
+                ":status": "COMPLETE"
             }
         )
 
         results.append({
-            "VideoId": video_id,
-            "Title": title,
-            "CommentSentimentSummary": sentiment_counts,
-            "SampleComments": sample_comments
+            "video_id": video_id,
+            "title": title,
+            "sentiment_data": {
+                "positive": sentiment_counts.get("POSITIVE", 0),
+                "neutral": sentiment_counts.get("NEUTRAL", 0),
+                "negative": sentiment_counts.get("NEGATIVE", 0)
+            },
+            "engagement_data": {
+                "likes": int(video.get("LikeCount", 0)),
+                "comments": int(video.get("CommentCount", 0)),
+                "views": int(video.get("ViewCount", 0))
+            }
         })
-
-    try:
-        lambda_client.invoke(
-            FunctionName='YouTubeVectorizeAndStoreFunction',
-            InvocationType='Event',
-            Payload=json.dumps({'channel_id': channel_id})
-        )
-    except Exception as e:
-        print(f"Error invoking vectorize Lambda: {e}")
 
     return {
         'statusCode': 200,

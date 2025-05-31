@@ -4,6 +4,10 @@ data "aws_lambda_function" "ingest" {
   function_name = aws_lambda_function.youtube_ingest.function_name
 }
 
+data "aws_lambda_function" "results" {
+  function_name = aws_lambda_function.youtube_fetch_results.function_name
+}
+
 data "aws_lambda_function" "llm" {
   function_name = aws_lambda_function.llm_insights.function_name
 }
@@ -28,6 +32,14 @@ resource "aws_apigatewayv2_api" "http_api" {
 #   source_arn    = "${aws_apigatewayv2_api.http_api.execution_arn}/*/*"
 # }
 
+# resource "aws_lambda_permission" "results_permission" {
+#   statement_id  = "AllowInvokeResults"
+#   action        = "lambda:InvokeFunction"
+#   function_name = data.aws_lambda_function.results.function_name
+#   principal     = "apigateway.amazonaws.com"
+#   source_arn    = "${aws_apigatewayv2_api.http_api.execution_arn}/*/*"
+# }
+
 # resource "aws_lambda_permission" "llm_permission" {
 #   statement_id  = "AllowInvokeLLM"
 #   action        = "lambda:InvokeFunction"
@@ -45,6 +57,14 @@ resource "aws_apigatewayv2_integration" "ingest_integration" {
   payload_format_version = "2.0"
 }
 
+resource "aws_apigatewayv2_integration" "results_integration" {
+  api_id                 = aws_apigatewayv2_api.http_api.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = data.aws_lambda_function.results.invoke_arn
+  integration_method     = "POST"
+  payload_format_version = "2.0"
+}
+
 resource "aws_apigatewayv2_integration" "llm_integration" {
   api_id                 = aws_apigatewayv2_api.http_api.id
   integration_type       = "AWS_PROXY"
@@ -58,6 +78,12 @@ resource "aws_apigatewayv2_route" "ingest_route" {
   api_id    = aws_apigatewayv2_api.http_api.id
   route_key = "POST /ingest-channel"
   target    = "integrations/${aws_apigatewayv2_integration.ingest_integration.id}"
+}
+
+resource "aws_apigatewayv2_route" "results_route" {
+  api_id    = aws_apigatewayv2_api.http_api.id
+  route_key = "POST /get-analysis-results"
+  target    = "integrations/${aws_apigatewayv2_integration.results_integration.id}"
 }
 
 resource "aws_apigatewayv2_route" "llm_route" {

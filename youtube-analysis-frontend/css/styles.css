@@ -1,0 +1,183 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Inter:wght@400;500;600;700&display=swap');
+        
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --youtube-red: #FF0000;
+    --youtube-dark-red: #CC0000;
+    --youtube-black: #0F0F0F;
+    --youtube-dark-gray: #212121;
+    --youtube-gray: #303030;
+    --youtube-light-gray: #606060;
+    --youtube-white: #FFFFFF;
+    --youtube-bg: #0F0F0F;
+    --accent-blue: #065FD4;
+    --accent-cyan: #00D4FF;
+    --success-green: #00C851;
+    --warning-orange: #FF8800;
+    --error-red: #FF4444;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+    font-family: 'Inter', 'Roboto', sans-serif;
+    background: var(--youtube-bg);
+    background-image: 
+        radial-gradient(circle at 25% 25%, rgba(255, 0, 0, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(6, 95, 212, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 50% 0%, rgba(0, 212, 255, 0.05) 0%, transparent 50%),
+        linear-gradient(135deg, #0F0F0F 0%, #1a1a1a 50%, #0F0F0F 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: var(--youtube-white);
+    overflow-x: hidden;
+}
+
+.background-pattern {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.02"><polygon points="30 0 60 30 30 60 0 30"/></g></svg>');
+    z-index: -1;
+    animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 30px 20px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Base typography */
+h1 {
+    font-family: 'Inter', sans-serif;
+    font-size: 3.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--youtube-red) 0%, var(--accent-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 15px;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+h2 {
+    color: var(--youtube-white);
+    margin-bottom: 25px;
+    font-size: 2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+h2::before {
+    content: '';
+    width: 4px;
+    height: 30px;
+    background: linear-gradient(180deg, var(--youtube-red), var(--accent-blue));
+    border-radius: 2px;
+}
+
+.subtitle {
+    font-size: 1.3rem;
+    color: var(--youtube-light-gray);
+    font-weight: 400;
+    margin-bottom: 20px;
+}
+
+/* Form elements */
+input[type="text"] {
+    width: 100%;
+    padding: 18px 24px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    font-size: 16px;
+    color: var(--youtube-white);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: 'Inter', sans-serif;
+}
+
+input[type="text"]::placeholder {
+    color: var(--youtube-light-gray);
+}
+
+input[type="text"]:focus {
+    outline: none;
+    border-color: var(--youtube-red);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 
+        0 0 0 4px rgba(255, 0, 0, 0.1),
+        0 8px 25px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: var(--youtube-white);
+    font-size: 1.1rem;
+    letter-spacing: 0.02em;
+}
+
+/* Utility classes */
+.hidden {
+    display: none;
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Responsive styles */
+@media (max-width: 1024px) {
+    .container {
+        padding: 20px 15px;
+    }
+    
+    h1 {
+        font-size: 2.8rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2.2rem;
+    }
+    
+    .subtitle {
+        font-size: 1.1rem;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+}

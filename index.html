@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Analytics Studio</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Inter:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --youtube-red: #FF0000;
+            --youtube-dark-red: #CC0000;
+            --youtube-black: #0F0F0F;
+            --youtube-dark-gray: #212121;
+            --youtube-gray: #303030;
+            --youtube-light-gray: #606060;
+            --youtube-white: #FFFFFF;
+            --youtube-bg: #0F0F0F;
+            --accent-blue: #065FD4;
+            --accent-cyan: #00D4FF;
+            --success-green: #00C851;
+            --warning-orange: #FF8800;
+            --error-red: #FF4444;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', 'Roboto', sans-serif;
+            background: var(--youtube-bg);
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(255, 0, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(6, 95, 212, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 0%, rgba(0, 212, 255, 0.05) 0%, transparent 50%),
+                linear-gradient(135deg, #0F0F0F 0%, #1a1a1a 50%, #0F0F0F 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: var(--youtube-white);
+            overflow-x: hidden;
+        }
+
+        .background-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.02"><polygon points="30 0 60 30 30 60 0 30"/></g></svg>');
+            z-index: -1;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 30px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--youtube-red), var(--accent-cyan));
+            border-radius: 2px;
+        }
+
+        h1 {
+            font-family: 'Inter', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--youtube-red) 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--youtube-light-gray);
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+
+        .youtube-icon {
+            display: inline-block;
+            width: 60px;
+            height: 42px;
+            background: var(--youtube-red);
+            border-radius: 8px;
+            position: relative;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(255, 0, 0, 0.3);
+        }
+
+        .youtube-icon::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-40%, -50%);
+            width: 0;
+            height: 0;
+            border-left: 12px solid white;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+        }
+
+        h2 {
+            color: var(--youtube-white);
+            margin-bottom: 25px;
+            font-size: 2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        h2::before {
+            content: '';
+            width: 4px;
+            height: 30px;
+            background: linear-gradient(180deg, var(--youtube-red), var(--accent-blue));
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: var(--youtube-white);
+            font-size: 1.1rem;
+            letter-spacing: 0.02em;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 18px 24px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            font-size: 16px;
+            color: var(--youtube-white);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Inter', sans-serif;
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--youtube-light-gray);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--youtube-red);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 
+                0 0 0 4px rgba(255, 0, 0, 0.1),
+                0 8px 25px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px 25px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .toggle-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 64px;
+            height: 36px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--youtube-gray);
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 36px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 28px;
+            width: 28px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        input:checked + .slider {
+            background: var(--youtube-red);
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(28px);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--youtube-red) 0%, var(--youtube-dark-red) 100%);
+            color: white;
+            padding: 18px 40px;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: none;
+            letter-spacing: 0.02em;
+            box-shadow: 
+                0 4px 20px rgba(255, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 8px 30px rgba(255, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--youtube-red);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 25px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .video-card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 4px solid var(--youtube-red);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .video-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(255, 0, 0, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(30px, -30px);
+        }
+
+        .video-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border-left-color: var(--accent-cyan);
+        }
+
+        .video-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--youtube-white);
+            margin-bottom: 15px;
+            line-height: 1.4;
+            position: relative;
+            z-index: 1;
+        }
+
+        .video-id {
+            font-size: 0.9rem;
+            color: var(--youtube-light-gray);
+            font-family: 'Monaco', 'Courier New', monospace;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 8px 16px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            display: inline-block;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 320px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .analysis-form {
+            background: rgba(6, 95, 212, 0.1);
+            border: 1px solid rgba(6, 95, 212, 0.2);
+            border-radius: 20px;
+            padding: 35px;
+            margin-top: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .analysis-form::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .status-message {
+            padding: 20px 25px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            font-weight: 500;
+            border-left: 4px solid;
+            backdrop-filter: blur(10px);
+        }
+
+        .error {
+            background: rgba(255, 68, 68, 0.15);
+            color: #ffb3b3;
+            border-left-color: var(--error-red);
+            border: 1px solid rgba(255, 68, 68, 0.3);
+        }
+
+        .success {
+            background: rgba(0, 200, 81, 0.15);
+            color: #b3ffcc;
+            border-left-color: var(--success-green);
+            border: 1px solid rgba(0, 200, 81, 0.3);
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, var(--youtube-gray) 0%, var(--youtube-light-gray) 100%);
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(96, 96, 96, 0.2);
+        }
+
+        .back-btn:hover {
+            box-shadow: 0 8px 30px rgba(96, 96, 96, 0.3);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--youtube-red);
+            display: block;
+        }
+
+        .stat-label {
+            color: var(--youtube-light-gray);
+            font-size: 0.95rem;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                padding: 20px 15px;
+            }
+            
+            h1 {
+                font-size: 2.8rem;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .card {
+                padding: 30px 25px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .video-card {
+                padding: 25px 20px;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+            
+            .toggle-container {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-pattern"></div>
+    
+    <div class="container">
+        <!-- Home Page -->
+        <div id="homePage">
+            <div class="card">
+                <div class="header">
+                    <div class="youtube-icon"></div>
+                    <h1>YouTube Analytics Studio</h1>
+                    <p class="subtitle">Professional Comment Analysis & Sentiment Intelligence</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="channelInput">🎯 Target Channel</label>
+                    <input type="text" id="channelInput" placeholder="Enter YouTube Channel Name" />
+                </div>
+
+                <div class="toggle-container">
+                    <div class="toggle-info">
+                        <label for="analyzeToggle">💬 Enable Comment Analysis</label>
+                        <span id="toggleStatus" class="pulse">Advanced Analytics Enabled</span>
+                    </div>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="analyzeToggle" checked>
+                        <span class="slider"></span>
+                    </div>
+                </div>
+
+                <button class="btn" id="analyzeBtn" onclick="startAnalysis()">
+                    🚀 Launch Analysis
+                </button>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Processing channel data and analyzing content patterns...</p>
+                </div>
+
+                <div class="status-message error hidden" id="errorMessage"></div>
+            </div>
+        </div>
+
+        <!-- Results Page -->
+        <div id="resultsPage" class="hidden">
+            <div class="card">
+                <button class="btn back-btn" onclick="goBack()">← Back to Studio</button>
+                
+                <div class="header">
+                    <h1>📊 Analytics Dashboard</h1>
+                </div>
+                
+                <div id="channelInfo"></div>
+                <div id="videoResults"></div>
+                
+                <!-- Comment Analysis Form -->
+                <div class="analysis-form">
+                    <h2>🔍 Deep Dive Analysis</h2>
+                    <p style="color: var(--youtube-light-gray); margin-bottom: 30px; font-size: 1.1rem;">
+                        Perform targeted comment analysis with AI-powered insights
+                    </p>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="videoIdInput">📹 Video ID</label>
+                            <input type="text" id="videoIdInput" placeholder="Enter specific Video ID" />
+                        </div>
+                        <div class="form-group">
+                            <label for="queryInput">🎯 Analysis Query</label>
+                            <input type="text" id="queryInput" placeholder="What insights are you looking for?" />
+                        </div>
+                    </div>
+                    
+                    <button class="btn" onclick="analyseComments()">
+                        🧠 Generate AI Insights
+                    </button>
+                    
+                    <div class="loading hidden" id="commentLoading">
+                        <div class="spinner"></div>
+                        <p>AI is analyzing comments and generating insights...</p>
+                    </div>
+                    
+                    <div class="status-message error hidden" id="commentError"></div>
+                    <div class="status-message success hidden" id="commentSuccess"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let processedVideos = [];
+        let totalStats = { views: 0, comments: 0, likes: 0 };
+        let initialChannelName = "";
+
+        // Configuration - Replace with your actual API Gateway URL
+        const API_BASE_URL = 'https://eofkc0nfr1.execute-api.us-east-1.amazonaws.com';
+        
+        // Toggle functionality
+        document.getElementById('analyzeToggle').addEventListener('change', function() {
+            const status = document.getElementById('toggleStatus');
+            status.textContent = this.checked ? 'Advanced Analytics Enabled' : 'Basic Mode Active';
+            status.className = this.checked ? 'pulse' : '';
+        });
+
+        async function startAnalysis() {
+            const channelInput = document.getElementById('channelInput').value.trim();
+            const analyseComments = document.getElementById('analyzeToggle').checked;
+
+            if (!channelInput) {
+                showError('Please enter a Channel ID or Channel Name');
+                return;
+            }
+
+            showLoading(true);
+            hideError();
+
+            try {
+                const ingestResponse = await fetch(`${API_BASE_URL}/ingest-channel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        channel_name: channelInput,
+                        analyse_comments: analyseComments
+                    })
+                });
+
+                const ingestData = await ingestResponse.json();
+                console.log("Ingest response:", ingestData);
+
+                if (!ingestResponse.ok) {
+                    throw new Error(`Failed to ingest channel: ${JSON.stringify(ingestData)}`);
+                }
+
+                const channelId = ingestData.channel_id || channelInput;
+                const channelName = ingestData.channel_name || channelInput;
+                const maxVideoCount = ingestData.video_count || 25;
+
+                initDisplayResults(channelName);
+
+                if (analyseComments) {
+                    setTimeout(() => {
+                        pollResults(channelId, maxVideoCount);
+                    }, 10000); // Wait 10 seconds before polling
+                } else {
+                    showLoading(false);
+                    showMessage("Channel metadata stored. Sentiment analysis was skipped.");
+                }
+
+            } catch (err) {
+                console.error(err);
+                showError("Failed to fetch data from backend.");
+            }
+        }
+
+
+        let alreadyShown = new Set();
+
+        async function pollResults(channelId, maxVideoCount, attempt = 1) {
+            try {
+                console.log(`Polling attempt ${attempt}...`);
+                const response = await fetch(`${API_BASE_URL}/get-analysis-results`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ channel_id: channelId })
+                });
+
+                const text = await response.text();
+                console.log("Poll response text:", text);
+
+                const data = JSON.parse(text);
+                const videos = Array.isArray(data) ? data : data.videos || [];
+
+                console.log(`Fetched ${videos.length} videos.`);
+
+                const newVideos = videos.filter(video => !alreadyShown.has(video.video_id));
+                newVideos.forEach(video => alreadyShown.add(video.video_id));
+
+                appendToResults(newVideos);
+
+                if (alreadyShown.size < maxVideoCount && attempt < 20) {
+                    setTimeout(() => pollResults(channelId, maxVideoCount, attempt + 1), 5000);
+                } else {
+                    showLoading(false);
+                }
+            } catch (err) {
+                console.error("Polling error:", err);
+                showError("Error retrieving results. Please try again.");
+                showLoading(false);
+            }
+        }
+
+
+
+        function initDisplayResults(channelName) {
+            initialChannelName = channelName;
+            processedVideos = [];
+            totalStats = { views: 0, comments: 0, likes: 0 };
+
+            document.getElementById('homePage').classList.add('hidden');
+            document.getElementById('resultsPage').classList.remove('hidden');
+
+            document.getElementById('channelInfo').innerHTML = `
+                <h2>📺 ${channelName}</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-number" id="statVideos">0</span>
+                        <div class="stat-label">Videos Analyzed</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="statViews">0</span>
+                        <div class="stat-label">Total Views</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="statComments">0</span>
+                        <div class="stat-label">Total Comments</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="statLikes">0</span>
+                        <div class="stat-label">Total Likes</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('videoResults').innerHTML = '';
+        }
+
+        function appendToResults(newVideos) {
+            const container = document.getElementById('videoResults');
+
+            newVideos.forEach(video => {
+                // Skip if already processed
+                if (processedVideos.some(v => v.video_id === video.video_id)) return;
+
+                processedVideos.push(video);
+                totalStats.views += video.engagement_data?.views || 0;
+                totalStats.comments += video.engagement_data?.comments || 0;
+                totalStats.likes += video.engagement_data?.likes || 0;
+
+                const card = createVideoCard(video);
+                container.appendChild(card);
+            });
+
+            // Update stats display
+            document.getElementById('statVideos').textContent = processedVideos.length;
+            document.getElementById('statViews').textContent = formatNumber(totalStats.views);
+            document.getElementById('statComments').textContent = formatNumber(totalStats.comments);
+            document.getElementById('statLikes').textContent = formatNumber(totalStats.likes);
+        }
+
+
+
+        function displayResults(channelName, videos) {
+            document.getElementById('homePage').classList.add('hidden');
+            document.getElementById('resultsPage').classList.remove('hidden');
+            
+            // Calculate total stats
+            const totalViews = videos.reduce((sum, video) => sum + (video.engagement_data?.views || 0), 0);
+            const totalComments = videos.reduce((sum, video) => sum + (video.engagement_data?.comments || 0), 0);
+            const totalLikes = videos.reduce((sum, video) => sum + (video.engagement_data?.likes || 0), 0);
+            
+            // Display channel info with stats
+            document.getElementById('channelInfo').innerHTML = `
+                <h2>📺 ${channelName}</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-number">${videos.length}</span>
+                        <div class="stat-label">Videos Analyzed</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${formatNumber(totalViews)}</span>
+                        <div class="stat-label">Total Views</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${formatNumber(totalComments)}</span>
+                        <div class="stat-label">Total Comments</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${formatNumber(totalLikes)}</span>
+                        <div class="stat-label">Total Likes</div>
+                    </div>
+                </div>
+            `;
+            
+            // Display video results
+            const resultsContainer = document.getElementById('videoResults');
+            resultsContainer.innerHTML = '';
+            
+            if (videos.length === 0) {
+                resultsContainer.innerHTML = '<p>No video data available.</p>';
+                return;
+            }
+            
+            videos.forEach(video => {
+                // Validate video object structure
+                if (!video.video_id || !video.title) {
+                    console.warn('Invalid video object:', video);
+                    return;
+                }
+                
+                const videoCard = createVideoCard(video);
+                resultsContainer.appendChild(videoCard);
+            });
+        }
+
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+
+        function createVideoCard(video) {
+            const card = document.createElement('div');
+            card.className = 'video-card';
+            
+            // Use default values if sentiment_data or engagement_data is missing
+            const sentimentData = video.sentiment_data || { positive: 0, neutral: 0, negative: 0 };
+            const engagementData = video.engagement_data || { likes: 0, comments: 0, views: 0 };
+            
+            // Decode HTML entities in the title
+            const decodedTitle = decodeHtmlEntities(video.title);
+            
+            card.innerHTML = `
+                <div class="video-title">${decodedTitle}</div>
+                <div class="video-id">Video ID: ${video.video_id}</div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div>
+                        <h3 style="color: var(--youtube-white); margin-bottom: 15px; font-size: 1.2rem;">💭 Sentiment Distribution</h3>
+                        <div class="chart-container">
+                            <canvas id="sentiment-${video.video_id}"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="color: var(--youtube-white); margin-bottom: 15px; font-size: 1.2rem;">📊 Engagement Metrics</h3>
+                        <div class="chart-container">
+                            <canvas id="engagement-${video.video_id}"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Create charts after the card is added to DOM
+            setTimeout(() => {
+                createSentimentChart(video.video_id, sentimentData);
+                createEngagementChart(video.video_id, engagementData);
+            }, 100);
+            
+            return card;
+        }
+
+        function decodeHtmlEntities(text) {
+            const textArea = document.createElement('textarea');
+            textArea.innerHTML = text;
+            return textArea.value;
+        }
+
+        function createSentimentChart(videoId, data) {
+            const ctx = document.getElementById(`sentiment-${videoId}`).getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Positive', 'Neutral', 'Negative'],
+                    datasets: [{
+                        data: [data.positive, data.neutral, data.negative],
+                        backgroundColor: [
+                            '#00C851',
+                            '#FF8800', 
+                            '#FF4444'
+                        ],
+                        borderWidth: 3,
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        hoverBorderWidth: 4,
+                        hoverBorderColor: '#FFFFFF'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#FFFFFF',
+                                font: {
+                                    family: 'Inter',
+                                    size: 12,
+                                    weight: 500
+                                },
+                                padding: 20,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 15, 15, 0.9)',
+                            titleColor: '#FFFFFF',
+                            bodyColor: '#FFFFFF',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1,
+                            cornerRadius: 12,
+                            displayColors: true
+                        }
+                    },
+                    cutout: '60%',
+                    elements: {
+                        arc: {
+                            borderRadius: 8
+                        }
+                    }
+                }
+            });
+        }
+
+        function createEngagementChart(videoId, data) {
+            const ctx = document.getElementById(`engagement-${videoId}`).getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Views', 'Likes', 'Comments'],
+                    datasets: [{
+                        data: [data.views, data.likes, data.comments],
+                        backgroundColor: [
+                            'rgba(255, 0, 0, 0.8)',
+                            'rgba(6, 95, 212, 0.8)',
+                            'rgba(0, 212, 255, 0.8)'
+                        ],
+                        borderRadius: 12,
+                        borderSkipped: false,
+                        borderWidth: 2,
+                        borderColor: [
+                            'rgba(255, 0, 0, 1)',
+                            'rgba(6, 95, 212, 1)',
+                            'rgba(0, 212, 255, 1)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 15, 15, 0.9)',
+                            titleColor: '#FFFFFF',
+                            bodyColor: '#FFFFFF',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1,
+                            cornerRadius: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + formatNumber(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#FFFFFF',
+                                font: {
+                                    family: 'Inter',
+                                    size: 11,
+                                    weight: 500
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)',
+                                borderDash: [5, 5]
+                            },
+                            ticks: {
+                                color: '#FFFFFF',
+                                font: {
+                                    family: 'Inter',
+                                    size: 11
+                                },
+                                callback: function(value) {
+                                    return formatNumber(value);
+                                }
+                            }
+                        }
+                    },
+                    elements: {
+                        bar: {
+                            borderRadius: 8
+                        }
+                    }
+                }
+            });
+        }
+
+        async function analyseComments() {
+            const videoId = document.getElementById('videoIdInput').value.trim();
+            const query = document.getElementById('queryInput').value.trim();
+            
+            if (!videoId || !query) {
+                showCommentError('Please enter both Video ID and Analysis Query');
+                return;
+            }
+
+            showCommentLoading(true);
+            hideCommentMessages();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/analyze-comments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        video_id: videoId,
+                        query: query
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const responseText = await response.text();
+                console.log('Raw comment analysis response:', responseText);
+
+                let analysisData;
+                try {
+                    // Parse the JSON response
+                    analysisData = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('JSON parsing error:', parseError);
+                    throw new Error('Invalid JSON response from server');
+                }
+
+                // Extract the LLM generated analysis text
+                let analysisText = 'No analysis available';
+                if (analysisData.llm_generated_analysis && 
+                    Array.isArray(analysisData.llm_generated_analysis) && 
+                    analysisData.llm_generated_analysis.length > 0 &&
+                    analysisData.llm_generated_analysis[0].text) {
+                    analysisText = analysisData.llm_generated_analysis[0].text;
+                }
+
+                showCommentSuccess(analysisText);
+                
+                // Clear form
+                document.getElementById('videoIdInput').value = '';
+                document.getElementById('queryInput').value = '';
+                
+            } catch (error) {
+                console.error('Comment analysis error:', error);
+                showCommentError(`Failed to analyze comments: ${error.message}`);
+            } finally {
+                showCommentLoading(false);
+            }
+        }
+
+        function goBack() {
+            document.getElementById('resultsPage').classList.add('hidden');
+            document.getElementById('homePage').classList.remove('hidden');
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('analyzeBtn').disabled = show;
+            
+            if (show) {
+                document.getElementById('analyzeBtn').textContent = '⏳ Processing...';
+            } else {
+                document.getElementById('analyzeBtn').textContent = '🚀 Launch Analysis';
+            }
+        }
+
+        function showCommentLoading(show) {
+            const loadingEl = document.getElementById('commentLoading');
+            const analyzeBtn = document.querySelector('.analysis-form .btn');
+            
+            if (show) {
+                loadingEl.classList.remove('hidden');
+                analyzeBtn.disabled = true;
+                analyzeBtn.textContent = '🧠 Analyzing...';
+            } else {
+                loadingEl.classList.add('hidden');
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '🧠 Generate AI Insights';
+            }
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        function showCommentError(message) {
+            const errorEl = document.getElementById('commentError');
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+        }
+
+        function showCommentSuccess(message) {
+            const successEl = document.getElementById('commentSuccess');
+            successEl.textContent = message;
+            successEl.classList.remove('hidden');
+        }
+
+        function hideCommentMessages() {
+            document.getElementById('commentError').classList.add('hidden');
+            document.getElementById('commentSuccess').classList.add('hidden');
+        }
+
+        // Add some interactive effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add floating animation to cards
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+            
+            // Add hover effects to input fields
+            const inputs = document.querySelectorAll('input[type="text"]');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.style.transform = 'translateY(-2px)';
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentElement.style.transform = 'translateY(0)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 resource "aws_lambda_function" "youtube_ingest" {
   function_name = "YouTubeIngestFunction"
   runtime       = "python3.9"
-  timeout       = 5
+  timeout       = 900  # Increased timeout
   handler       = "lambda_youtube_ingest.lambda_handler"
   memory_size   = 256
 
@@ -22,9 +22,9 @@ resource "aws_lambda_function" "youtube_ingest" {
 resource "aws_lambda_function" "youtube_nlp_analysis" {
   function_name = "YouTubeNLPAnalysisFunction"
   runtime       = "python3.9"
-  timeout       = 60
+  timeout       = 900  # 15 minutes - increased for processing
   handler       = "lambda_nlp_sentiment_analysis.lambda_handler"
-  memory_size   = 512
+  memory_size   = 1024  # Increased memory for Comprehend processing
 
   filename         = "../Lambda/lambda_nlp_sentiment_analysis.zip"
   source_code_hash = filebase64sha256("../Lambda/lambda_nlp_sentiment_analysis.zip")
@@ -33,6 +33,27 @@ resource "aws_lambda_function" "youtube_nlp_analysis" {
     variables = {
       YOUTUBE_API_KEY = var.youtube_api_key
       DYNAMODB_TABLE  = aws_dynamodb_table.youtube_metadata.name
+      REGION      = var.aws_region
+    }
+  }
+
+  role = aws_iam_role.lambda_admin_role.arn
+}
+
+resource "aws_lambda_function" "youtube_fetch_results" {
+  function_name = "DynamoDBFetchResults"
+  runtime       = "python3.9"
+  timeout       = 900  # 15 minutes - increased for processing
+  handler       = "lambda_fetch_results.lambda_handler"
+  memory_size   = 256  # Increased memory for Comprehend processing
+
+  filename         = "../Lambda/lambda_fetch_results.zip"
+  source_code_hash = filebase64sha256("../Lambda/lambda_fetch_results.zip")
+
+  environment {
+    variables = {
+      DYNAMODB_TABLE  = aws_dynamodb_table.youtube_metadata.name
+      REGION      = var.aws_region
     }
   }
 
@@ -59,46 +80,3 @@ resource "aws_lambda_function" "llm_insights" {
 
   role = aws_iam_role.lambda_admin_role.arn
 }
-
-# resource "aws_lambda_function" "vectorize_and_store" {
-#   function_name = "YouTubeVectorizeAndStoreFunction"
-#   runtime       = "python3.11"
-#   timeout       = 120
-#   memory_size   = 512
-#   handler       = "lambda_vectorize_store.lambda_handler"
-
-#   filename         = "../Lambda/lambda_vectorize_store.zip"
-#   source_code_hash = filebase64sha256("../Lambda/lambda_vectorize_store.zip")
-
-#   environment {
-#     variables = {
-#       DYNAMODB_TABLE      = aws_dynamodb_table.youtube_metadata.name
-#       OPENSEARCH_ENDPOINT = aws_opensearch_domain.youtube_comments.endpoint
-#       REGION              = var.aws_region
-#       BEDROCK_MODEL_ID    = "amazon.titan-embed-text-v1"
-#     }
-#   }
-
-#   role = aws_iam_role.lambda_admin_role.arn
-# }
-
-# resource "aws_lambda_function" "retrieve_comments" {
-#   function_name = "YouTubeRetrieveCommentsFunction"
-#   runtime       = "python3.11"
-#   timeout       = 60
-#   memory_size   = 512
-#   handler       = "lambda_retrieve_comments.lambda_handler"
-
-#   filename         = "../Lambda/lambda_retrieve_comments.zip"
-#   source_code_hash = filebase64sha256("../Lambda/lambda_retrieve_comments.zip")
-
-#   environment {
-#     variables = {
-#       REGION              = var.aws_region
-#       OPENSEARCH_ENDPOINT = aws_opensearch_domain.youtube_comments.endpoint
-#       BEDROCK_MODEL_ID    = "amazon.titan-embed-text-v1"  
-#     }
-#   }
-
-#   role = aws_iam_role.lambda_admin_role.arn
-# }

@@ -84,6 +84,14 @@ resource "aws_lambda_permission" "ingest_permission" {
   source_arn    = "${aws_apigatewayv2_api.http_api.execution_arn}/*/*"
 }
 
+resource "aws_lambda_permission" "results_permission" {
+  statement_id  = "AllowInvokeResults"
+  action        = "lambda:InvokeFunction"
+  function_name = data.aws_lambda_function.results.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.http_api.execution_arn}/*/*"
+}
+
 resource "aws_lambda_permission" "llm_permission" {
   statement_id  = "AllowInvokeLLM"
   action        = "lambda:InvokeFunction"

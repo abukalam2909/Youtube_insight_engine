@@ -40,13 +40,26 @@ def fetch_youtube_data(channel_id):
         "channelId": channel_id,
         "part": "snippet",
         "maxResults": 25,
-        "order": "date"
+        "order": "date",
+        "type": "video"
     }
     query_string = urllib.parse.urlencode(params)
     request_url = f"{base_url}?{query_string}"
 
     with urllib.request.urlopen(request_url) as response:
         return json.loads(response.read())
+
+def fetch_video_statistics(video_id):
+    stats_url = (
+        f"https://www.googleapis.com/youtube/v3/videos"
+        f"?part=statistics&id={video_id}&key={YOUTUBE_API_KEY}"
+    )
+    with urllib.request.urlopen(stats_url) as response:
+        stats_data = json.loads(response.read())
+        if stats_data["items"]:
+            return stats_data["items"][0].get("statistics", {})
+        return {}
+
 
 def lambda_handler(event, context):
     if "body" in event and isinstance(event["body"], str):
@@ -80,11 +93,13 @@ def lambda_handler(event, context):
         ContentType="application/json"
     )
 
+    video_count = 0
     # Store structured video metadata in DynamoDB
     for item in data.get("items", []):
         snippet = item.get("snippet", {})
         video_id = item["id"].get("videoId")
         if video_id:
+            stats = fetch_video_statistics(video_id)
             table.put_item(
                 Item={
                     "VideoId": video_id,
@@ -92,22 +107,44 @@ def lambda_handler(event, context):
                     "Title": snippet.get("title"),
                     "PublishedAt": snippet.get("publishedAt"),
                     "Description": snippet.get("description"),
-                    "FetchedAt": timestamp
+                    "FetchedAt": timestamp,
+                    "ViewCount": int(stats.get("viewCount", 0)),
+                    "LikeCount": int(stats.get("likeCount", 0)),
+                    "CommentCount": int(stats.get("commentCount", 0))
                 }
             )
+            video_count += 1
+
 
     # Call second Lambda for sentiment analysis if analyse_comments = true
     if analyse_comments:
         lambda_client.invoke(
             FunctionName='YouTubeNLPAnalysisFunction',
-            InvocationType='Event', 
+            InvocationType='Event',  # Async
             Payload=json.dumps({
                 "channel_id": channel_id
-            })
+            }).encode('utf-8')
         )
+
+        return {
+            "statusCode": 202,
+            "body": json.dumps({
+                "message": "Sentiment analysis started. Please wait a few moments before checking results.",
+                "channel_id": channel_id,
+                "channel_name": channel_name,
+                "video_count": video_count
+            })
+        }
+
 
 
     return {
         "statusCode": 200,
-        "body": f"Fetched and stored metadata for channel {channel_id}"
+        "body": json.dumps({
+            "message": f"Fetched and stored metadata for channel {channel_id}",
+            "channel_id": channel_id,
+            "channel_name": channel_name,
+            "video_count": video_count
+        })
     }
+
