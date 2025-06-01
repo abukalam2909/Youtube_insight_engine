@@ -16,6 +16,11 @@ resource "aws_lambda_function" "youtube_ingest" {
     }
   }
 
+  vpc_config {
+    subnet_ids         = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+    security_group_ids = [aws_security_group.lambda_sg.id]
+  }
+
   role = aws_iam_role.lambda_admin_role.arn
 }
 
@@ -35,6 +40,11 @@ resource "aws_lambda_function" "youtube_nlp_analysis" {
       DYNAMODB_TABLE  = aws_dynamodb_table.youtube_metadata.name
       REGION      = var.aws_region
     }
+  }
+
+  vpc_config {
+    subnet_ids         = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+    security_group_ids = [aws_security_group.lambda_sg.id]
   }
 
   role = aws_iam_role.lambda_admin_role.arn
@@ -57,6 +67,11 @@ resource "aws_lambda_function" "youtube_fetch_results" {
     }
   }
 
+  vpc_config {
+    subnet_ids         = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+    security_group_ids = [aws_security_group.lambda_sg.id]
+  }
+
   role = aws_iam_role.lambda_admin_role.arn
 }
 
@@ -76,6 +91,11 @@ resource "aws_lambda_function" "llm_insights" {
       REGION              = var.aws_region
       BEDROCK_MODEL_ID    = "anthropic.claude-3-sonnet-20240229-v1:0"
     }
+  }
+
+  vpc_config {
+    subnet_ids         = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+    security_group_ids = [aws_security_group.lambda_sg.id]
   }
 
   role = aws_iam_role.lambda_admin_role.arn

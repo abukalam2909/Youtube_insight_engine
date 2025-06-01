@@ -39,7 +39,7 @@ def fetch_youtube_data(channel_id):
         "key": YOUTUBE_API_KEY,
         "channelId": channel_id,
         "part": "snippet",
-        "maxResults": 25,
+        "maxResults": 10,
         "order": "date",
         "type": "video"
     }

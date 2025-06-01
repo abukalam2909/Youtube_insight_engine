@@ -75,6 +75,31 @@ resource "aws_iam_role_policy_attachment" "attach_bedrock_invoke" {
   policy_arn = aws_iam_policy.bedrock_invoke.arn
 }
 
+resource "aws_iam_policy" "lambda_vpc_permissions" {
+  name        = "LambdaVPCAccessPolicy"
+  description = "Permissions for Lambda to manage VPC networking"
+  policy      = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect   = "Allow",
+        Action   = [
+          "ec2:CreateNetworkInterface",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DeleteNetworkInterface"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_lambda_vpc_permissions" {
+  role       = aws_iam_role.lambda_admin_role.name
+  policy_arn = aws_iam_policy.lambda_vpc_permissions.arn
+}
+
+
 # Lambda permissions
 resource "aws_lambda_permission" "ingest_permission" {
   statement_id  = "AllowInvokeIngest"

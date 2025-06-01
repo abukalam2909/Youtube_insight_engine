@@ -1,5 +1,4 @@
 // Configuration
-//const API_BASE_URL = 'https://bprxa2mj2e.execute-api.us-east-1.amazonaws.com';
 const API_BASE_URL = window._env_?.API_BASE_URL;
 
 /**
